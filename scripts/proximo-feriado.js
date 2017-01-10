@@ -8,14 +8,37 @@
 //   none
 
 // Commands:
-//   hubot proximo feriado - Retorna la cantidad de días y la fecha del próximo feriado en Chile
+//   hubot pr(o|ó)ximo feriado - Retorna la cantidad de días, la fecha y el motivo del próximo feriado en Chile
 
 // Author:
 //   @victorsanmartin
 
+// Co-Author:
+//   @jorgeepunan
+
+
+function days_diff(now, date) {
+  var date1 = new Date(date + 'T00:00:00-03:00'),
+      date2 = new Date(now + 'T00:00:00-03:00'),
+      timeDiff = Math.abs(date2.getTime() - date1.getTime()),
+      diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+  return diffDays;
+}
+
+
+function humanizeMonth(month){
+  var month       = month - 1,
+      monthNames  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Sedtiembre','Octubre','Noviembre','Diciembre'];
+  
+  return monthNames[month];
+}
+
+
+
 module.exports = function (robot) {
 
-  robot.respond(/proximo feriado/i, function (msg) {
+  robot.respond(/pr(o|ó)ximo feriado/i, function (msg) {
 
     var today = new Date([
           new Date().getFullYear(),
@@ -30,7 +53,11 @@ module.exports = function (robot) {
               body = JSON.parse(body);
 
           body.data.forEach(function(holiday, index) {
-            var date = new Date(holiday.date + 'T00:00:00-03:00');
+            var date        = new Date(holiday.date + 'T00:00:00-03:00'),
+                humanDate   = holiday.date.split('-');
+                humanDay    = humanDate[2].replace(/^0+/, '');
+                humanMonth  = humanDate[1],
+                message     = holiday.title + " (_" + holiday.extra.toLowerCase() + "_)";
 
             if (ok == false && date.getTime() >= today.getTime()) {
               ok = true;
@@ -42,13 +69,10 @@ module.exports = function (robot) {
               ].join('-'), holiday.date);
 
               if (dias == 0) {
-                msg.send('*HOY* es feriado!! Disfrutalo!');
+                msg.send('¡*HOY* es feriado! Se celebra: ' + message + '. ¡Disfrútalo!');
+              } else {
+                msg.send("El próximo feriado es el *" + humanDay + " de " + humanizeMonth(humanMonth).toLowerCase() + "*, quedan *" + dias + "* días. Se celebra: " + message + ".");
               }
-              else {
-                msg.send("El próximo feriado es en *" + dias + "* días.");
-              }
-
-              msg.send(holiday.title + " [_" + holiday.extra + "_]");
             }
           });
 
@@ -56,12 +80,4 @@ module.exports = function (robot) {
 
   });
 
-  function days_diff(now, date) {
-      var date1 = new Date(date + 'T00:00:00-03:00'),
-          date2 = new Date(now + 'T00:00:00-03:00'),
-          timeDiff = Math.abs(date2.getTime() - date1.getTime()),
-          diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-      return diffDays;
-    }
 }
